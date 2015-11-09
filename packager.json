@@ -1,0 +1,16 @@
+{
+  "osx" : {
+    "background": "assets/osx/installer.png",
+    "title": "UberManager",
+    "icon": "assets/osx/icon.icns",
+    "icon-size": 128,
+    "contents": [
+      { "x": 587, "y": 249, "type": "link", "path": "/Applications" },
+      { "x": 208, "y": 249, "type": "file" }
+    ]
+  },
+  "win" : {
+    "title" : "UberManager",
+    "icon" : "assets/win/icon.ico"
+  }
+}

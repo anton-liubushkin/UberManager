@@ -1,0 +1,82 @@
+* {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: sans-serif;
+    outline: none;
+}
+
+body {
+    padding-top: 30px;
+}
+
+h1,h2 {
+    margin: 30px 5% 10px 5%;
+    padding-left: 20px;
+}
+
+h2 {
+    font-size: 18px;
+}
+
+ul, #installzxp {
+    width: 90%;
+    margin: 0 auto;
+}
+
+li, #installzxp {
+    display: block;
+    margin-bottom: 5px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    background-color: #fff;
+    font-size: 13px;
+    transition: all .3s;
+}
+
+li:hover {
+    background-color: #dff2f6;
+}
+
+#installzxp {
+    border: none;
+    background-color: #31B17A;
+    color: white;
+    cursor: pointer;
+}
+
+#installzxp:hover {
+    background-color: #36d38f;
+}
+
+li span {
+    font-size: 10px;
+    color: #999999;
+}
+
+.extension_version {
+    vertical-align: super;
+    margin-left: 5px;
+}
+
+.extension_hosts img {
+    width: 16px;
+    height: 16px;
+    vertical-align: bottom;
+    margin-left: 5px;
+}
+
+.extension_remove {
+    width: 16px;
+    height: 16px;
+    float: right;
+    cursor: pointer;
+    opacity: 0.1;
+    transition: all .3s;
+}
+
+li:hover .extension_remove {
+    opacity: 1;
+}

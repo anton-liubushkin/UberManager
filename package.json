@@ -1,0 +1,24 @@
+{
+  "name": "ubermanager",
+  "version": "0.1.0",
+  "description": "An open source Adobe extension manager",
+  "scripts": {
+    "dev": "electron ./app",
+    "clean": "rm -rf ./release",
+    "clean:osx": "rm -rf ./release/osx",
+    "clean:win": "rm -rf ./release/win",
+    "build": "npm run clean && npm run build:osx && npm run build:win",
+    "build:osx": "npm run clean:osx && electron-packager ./app \"UberManager\" --out=release/osx --platform=darwin --arch=x64 --version=0.34.2 --icon=assets/osx/icon.icns",
+    "build:win": "npm run clean:win && electron-packager ./app \"UberManager\" --out=release/win --platform=win32 --arch=ia32 --version=0.34.2 --icon=assets/win/icon.ico",
+    "pack": "npm run pack:osx && npm run pack:win",
+    "pack:osx": "npm run build:osx && electron-builder \"release/osx/UberManager-darwin-x64/UberManager.app\" --platform=osx --out=\"release/osx\" --config=packager.json",
+    "pack:win": "npm run build:win && electron-builder \"release/win/UberManager-win32-ia32\" --platform=win --out=\"release/win\" --config=packager.json"
+  },
+  "devDependencies": {
+    "electron-builder": "^2.1.1",
+    "electron-packager": "^5.1.1",
+    "electron-prebuilt": "^0.34.2"
+  },
+  "author": "Anton Lyubushkin <nvkz.nemo@gmail.com> (http://uberplugins.cc)",
+  "license": "ISC"
+}
