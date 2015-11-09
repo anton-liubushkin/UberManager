@@ -9,13 +9,12 @@ UberManager uses Electron (http://electron.atom.io) to create a cross platform H
 # Setup (OS X)
 
 1. Install [Node.js](https://nodejs.org/).
-2. Install the dependencies and start the app.
-```
-cd app && npm install
-cd ..
-npm install
-npm run dev
-```
+
+1. Install the dependencies and start the app.
+    ```
+    cd app && npm install && cd .. && npm install
+    npm run dev
+    ```
 
 # Compiling (OS X)
 
