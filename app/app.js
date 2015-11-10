@@ -14,9 +14,9 @@ var fs = require('fs'),
     _osArch = os.arch(),
     _dirHome = app.getPath('home'), // C:/Users/Anton
     _dirAppdata = app.getPath('appData'), // C:/Users/Anton/AppData/Roaming || ~/Library/Application Support
-    _dirTemp = app.getPath('temp') + '\\UberManager', // C:/Users/Anton/AppData/Local/Temp
+    _dirTemp = app.getPath('temp'), // C:/Users/Anton/AppData/Local/Temp
     _dirDesktop = app.getPath('userDesktop'), // C:/Users/Anton/Desktop
-    _dirApplications = _dirHome + '\\..\\..\\Program Files (x86)',
+    _dirApplications = path.join(_dirHome, '..', '..', 'Program Files (x86)'),
     _dirCommonFiles = null,
     extensionsList = [],
     extensionsDirectoriesList = [],
@@ -53,20 +53,20 @@ function getDirectories(srcpath, callback) {
     }
 }
 
-function exists(path, make) {
+function exists(_path, make) {
     make = make || false;
     try {
-        fs.accessSync(path);
+        fs.accessSync(_path);
         if (make) {
-            return path
+            return _path
         } else {
             return true;
         }
     } catch (ex) {
         if (make) {
-            mkdirp(path, function(err){
+            mkdirp(_path, function(err){
                 if (!err) {
-                    return path;
+                    return _path;
                 } else {
                     console.log(err);
                     return null;
@@ -78,15 +78,15 @@ function exists(path, make) {
     }
 }
 
-function getExtensionInfo(path, newInstall) {
-    fs.readFile(path + '/CSXS/manifest.xml', function(err, data) {
+function getExtensionInfo(_extensiondir, newInstall) {
+    fs.readFile(path.join(_extensiondir, 'CSXS', 'manifest.xml'), function(err, data) {
         //console.log('Get info for ' + path);
         try {
             parser.parseString(data);
             var ext = {};
             ext.name = xmlObj.ExtensionManifest.$.ExtensionBundleName || xmlObj.ExtensionManifest.$.ExtensionBundleId; // Extension Name
             ext.id = xmlObj.ExtensionManifest.$.ExtensionBundleId;
-            ext.path = path;
+            ext.path = _extensiondir;
             ext.ver = xmlObj.ExtensionManifest.$.ExtensionBundleVersion;
             ext.cep = Math.floor(xmlObj.ExtensionManifest.ExecutionEnvironment[0].RequiredRuntimeList[0].RequiredRuntime[0].$.Version);
             var hostsList = xmlObj.ExtensionManifest.ExecutionEnvironment[0].HostList[0].Host;
@@ -108,7 +108,7 @@ function getExtensionInfo(path, newInstall) {
             //console.log(ext.hosts[i].$.Version.replace(/([\[\]])+/g, '').split(',')); // Supported Versions
             //console.log(xmlObj.ExtensionManifest.Author[0]); // Author
         } catch (e) {
-            console.log('​/ ! \\ Error! Can not read manifest.xml file from: ' + path);
+            console.log('​/ ! \\ Error! Can not read manifest.xml file from: ' + _extensiondir);
             currentExtensions++;
             if (currentExtensions == totalExtensions && totalExtensions != 0) drawExtensionsList(extensionsList);
         }
@@ -121,12 +121,13 @@ function updateExtensionsList() {
     resetVars();
 
     if (_osPlatform == "win32") {
-        var path1 = exists(_dirCommonFiles + '\\Adobe\\CEPServiceManager4\\extensions', true);
-        var path2 = exists(_dirCommonFiles + '\\Adobe\\CEP\\extensions', true);
-        var path3 = exists(_dirAppdata + '\\Adobe\\CEPServiceManager4\\extensions', true);
-        var path4 = exists( _dirAppdata + '\\Adobe\\CEP\\extensions', true);
+        var winPaths = [];
+        winPaths.push( exists( path.join(_dirCommonFiles, 'Adobe', 'CEPServiceManager4', 'extensions'), true) );
+        winPaths.push( exists( path.join(_dirCommonFiles, 'Adobe', 'CEP', 'extensions'), true) );
+        winPaths.push( exists( path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions'), true) );
+        winPaths.push( exists( path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions'), true) );
 
-        getDirectories([path1, path2, path3, path4], function(msg) {
+        getDirectories(winPaths, function(msg) {
             totalExtensions = extensionsDirectoriesList.length;
             for (i in extensionsDirectoriesList) {
                 getExtensionInfo(extensionsDirectoriesList[i]);
@@ -134,12 +135,13 @@ function updateExtensionsList() {
         });
 
     } else {
-        var path1 = exists('/Library/Application Support/Adobe/CEPServiceManager4/extensions', true);
-        var path2 = exists('/Library/Application Support/Adobe/CEP/extensions', true);
-        var path3 = exists(_dirAppdata + '/Adobe/CEPServiceManager4/extensions', true);
-        var path4 = exists(_dirAppdata + '/Adobe/CEP/extensions', true);
+        var macPaths = [];
+        macPaths.push(exists('/Library/Application Support/Adobe/CEPServiceManager4/extensions', true));
+        macPaths.push(exists('/Library/Application Support/Adobe/CEP/extensions', true));
+        macPaths.push(exists(path.join(_dirAppdata, '/Adobe/CEPServiceManager4/extensions'), true));
+        macPaths.push(exists(path.join(_dirAppdata, '/Adobe/CEP/extensions'), true));
 
-        getDirectories([path1, path2, path3, path4], function(msg) {
+        getDirectories(macPaths, function(msg) {
             totalExtensions = extensionsDirectoriesList.length;
             for (i in extensionsDirectoriesList) {
                 getExtensionInfo(extensionsDirectoriesList[i]);
@@ -170,7 +172,7 @@ function installExtension(ext) {
 
     function copyExtension(cepVersions) {
         for (i in cepVersions) {
-            ncp(ext.path, _dirAppdata + '/Adobe/' + cepVersions[i] + '/extensions/' + ext.id, function(err) {
+            ncp(ext.path, path.join(_dirAppdata, 'Adobe', cepVersions[i], 'extensions', ext.id), function(err) {
                 if (!err) {
                     toggleMessageBox("success")
                     updateExtensionsList();
@@ -183,16 +185,16 @@ function installExtension(ext) {
     }
 
     function checkOldVersions(callback) {
-        if (exists(_dirAppdata + '/Adobe/CEP/extensions/' + ext.id)) {
+        if ( exists( path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions', ext.id) ) ) {
             //console.log('We find & delete old version of installed extension in the CEP folder');
-            listOfDirectroiesToRemove.push(_dirAppdata + '/Adobe/CEP/extensions/' + ext.id);
+            listOfDirectroiesToRemove.push( path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions', ext.id) );
         }
 
         if (ext.cep < 5) {
             //console.log('This extension does support old CC (CEP' + ext.cep + ')');
-            if (exists(_dirAppdata + '/Adobe/CEPServiceManager4/extensions/' + ext.id)) {
+            if ( exists( path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions', ext.id) ) ) {
                 //console.log('We find old version of installed extension in the CEPServiceManager4 folder');
-                listOfDirectroiesToRemove.push(_dirAppdata + '/Adobe/CEPServiceManager4/extensions/' + ext.id);
+                listOfDirectroiesToRemove.push( path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions', ext.id) );
             }
         }
 
@@ -217,10 +219,10 @@ function installExtension(ext) {
 function checkPlatform() {
     if (_osPlatform == 'win32') {
         if (exists(_dirApplications)) {
-            _dirCommonFiles = _dirApplications + '\\Common Files';
+            _dirCommonFiles = path.join(_dirApplications, 'Common Files');
         } else {
-            _dirCommonFiles = _dirHome + '\\..\\..\\Program Files\\Common Files';
-            _dirApplications = _dirHome + '\\..\\..\\Program Files';
+            _dirCommonFiles = path.join(_dirHome, '..', '..', 'Program Files', 'Common Files');
+            _dirApplications = path.join(_dirHome, '..', '..', 'Program Files');
         }
     } else {
         // Some code for MAC
@@ -252,10 +254,22 @@ document.getElementById('installzxp').onclick = function() {
     };
 
     dialog.showOpenDialog(dialogFilter, function(filepath) {
+
         if (!filepath) return
+
         toggleMessageBox("progress");
-        var installPath = _dirTemp + '/newextension';
+
+        var newfile = path.parse(filepath[0]);
+
+        if (newfile.ext != ".zxp") {
+            toggleMessageBox("error", "Cannot install this type of file. Please use a ZXP file");
+            return
+        }
+
+        var installPath = path.join(_dirTemp, 'UberManager', newfile.name);
+
         var readStream = fs.createReadStream(filepath[0]);
+
         var unzipStream = unzip.Extract({
             path: installPath
         });
@@ -267,7 +281,7 @@ document.getElementById('installzxp').onclick = function() {
             getExtensionInfo(installPath, true);
         });
         unzipStream.on('error', function(err) {
-            toggleMessageBox("error", "Cannot install this type of file. Please use a ZXP file");
+            toggleMessageBox("error", "Installation failed because UberManager could not parse the ZXP file");
             updateExtensionsList();
         });
 
@@ -397,22 +411,23 @@ function clickOnRemoveIcon() {
 
 function toggleMessageBox(type, message) {
 
+    var message_box_wrapper = document.getElementById('message_box_wrapper');
+    var message_box = document.getElementById('message_box');
+    var installbtn = document.getElementById('installzxp');
+
     function hideMessageBox() {
         message_box_wrapper.style.opacity = "0";
         message_box.classList.remove("show");
     }
 
-    var installbtn = document.getElementById('installzxp');
-    var message_box_wrapper = document.getElementById('message_box_wrapper');
-    var message_box = document.getElementById('message_box');
-    var msg_progress = document.getElementById('msg_progress');
-    var msg_progress_text = document.getElementById('msg_progress_text');
-    var msg_success = document.getElementById('msg_success');
-    var msg_success_text = document.getElementById('msg_success_text');
-    var msg_error = document.getElementById('msg_error');
-    var msg_error_text = document.getElementById('msg_error_text');
-
     if (type) {
+        var msg_progress = document.getElementById('msg_progress');
+        var msg_progress_text = document.getElementById('msg_progress_text');
+        var msg_success = document.getElementById('msg_success');
+        var msg_success_text = document.getElementById('msg_success_text');
+        var msg_error = document.getElementById('msg_error');
+        var msg_error_text = document.getElementById('msg_error_text');
+
         message_box_wrapper.style.opacity = "1";
         message_box.className = "show";
 
