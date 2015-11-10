@@ -240,7 +240,7 @@ checkPlatform();
 // ========================================================
 
 document.getElementById('installzxp').onclick = function() {
-    hideMessageBox();
+    toggleMessageBox();
     var dialogFilter = {
         filters: [{
             name: 'Adobe Extension',
@@ -393,12 +393,15 @@ function clickOnRemoveIcon() {
     })
 }
 
-function hideMessageBox() {
-    message_box_wrapper.style.opacity = "0";
-    message_box.classList.remove("show");
-}
+
 
 function toggleMessageBox(type, message) {
+
+    function hideMessageBox() {
+        message_box_wrapper.style.opacity = "0";
+        message_box.classList.remove("show");
+    }
+
     var installbtn = document.getElementById('installzxp');
     var message_box_wrapper = document.getElementById('message_box_wrapper');
     var message_box = document.getElementById('message_box');
