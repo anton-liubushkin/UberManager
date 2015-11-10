@@ -25,6 +25,7 @@ var fs = require('fs'),
     parser = new xml2js.Parser(),
     xmlObj = null,
     removeButtons = [],
+    msgtimer,
     ignoreList = ["com.adobe.DesignLibraries.angular", "AdobeExchange", "com.adobe.behance.shareonbehance.html", "KulerPanelBundle", "SearchForHelp", "com.adobe.preview", "com.adobe.webpa.crema"];
 
 
@@ -171,8 +172,10 @@ function installExtension(ext) {
         for (i in cepVersions) {
             ncp(ext.path, _dirAppdata + '/Adobe/' + cepVersions[i] + '/extensions/' + ext.id, function(err) {
                 if (!err) {
+                    toggleMessageBox("success")
                     updateExtensionsList();
                 } else {
+                    toggleMessageBox("error", "Installation failed. Error: " + err);
                     console.log(err);
                 }
             });
@@ -237,6 +240,7 @@ checkPlatform();
 // ========================================================
 
 document.getElementById('installzxp').onclick = function() {
+    hideMessageBox();
     var dialogFilter = {
         filters: [{
             name: 'Adobe Extension',
@@ -249,6 +253,7 @@ document.getElementById('installzxp').onclick = function() {
 
     dialog.showOpenDialog(dialogFilter, function(filepath) {
         if (!filepath) return
+        toggleMessageBox("progress");
         var installPath = _dirTemp + '/newextension';
         var readStream = fs.createReadStream(filepath[0]);
         var unzipStream = unzip.Extract({
@@ -262,7 +267,7 @@ document.getElementById('installzxp').onclick = function() {
             getExtensionInfo(installPath, true);
         });
         unzipStream.on('error', function(err) {
-            console.log('Error: ' + err);
+            toggleMessageBox("error", "Cannot install this type of file. Please use a ZXP file");
             updateExtensionsList();
         });
 
@@ -379,9 +384,70 @@ function drawExtensionsList(extensionsList) {
 };
 
 function clickOnRemoveIcon() {
+    toggleMessageBox("progress", "Uninstallation is in progress");
     var paths = (this.getAttribute("data-path")).split(",");
 
     removeDirectories(paths, function() {
         updateExtensionsList();
+        toggleMessageBox("success", "Extension successfully uninstalled");
     })
+}
+
+function hideMessageBox() {
+    message_box_wrapper.style.opacity = "0";
+    message_box.classList.remove("show");
+}
+
+function toggleMessageBox(type, message) {
+    var installbtn = document.getElementById('installzxp');
+    var message_box_wrapper = document.getElementById('message_box_wrapper');
+    var message_box = document.getElementById('message_box');
+    var msg_progress = document.getElementById('msg_progress');
+    var msg_progress_text = document.getElementById('msg_progress_text');
+    var msg_success = document.getElementById('msg_success');
+    var msg_success_text = document.getElementById('msg_success_text');
+    var msg_error = document.getElementById('msg_error');
+    var msg_error_text = document.getElementById('msg_error_text');
+
+    if (type) {
+        message_box_wrapper.style.opacity = "1";
+        message_box.className = "show";
+
+        msg_progress.style["display"] = "none";
+        msg_success.style["display"] = "none";
+        msg_error.style["display"] = "none";
+
+        if (type == "progress") {
+            clearTimeout(msgtimer);
+            installbtn.disabled = true;
+            msg_progress_text.innerHTML = message || "Installation is in progress";
+            msg_progress.style["display"] = "block";
+            message_box.className = message_box.className + " progress";
+        }
+
+        if (type == "success") {
+            clearTimeout(msgtimer);
+            installbtn.disabled = false;
+            msg_success_text.innerHTML = message || "Extension successfully installed";
+            msg_success.style["display"] = "block";
+            message_box.className = message_box.className + " success";
+            msgtimer = setTimeout(hideMessageBox, 3000);
+        }
+
+        if (type == "error") {
+            clearTimeout(msgtimer);
+            installbtn.disabled = false;
+            msg_error_text.innerHTML = message || "Oops, unknown error";
+            msg_error.style["display"] = "block";
+            message_box.className = message_box.className + " error";
+            msgtimer = setTimeout(hideMessageBox, 10000);
+        }
+
+    } else {
+        clearTimeout(msgtimer);
+        installbtn.disabled = false;
+        hideMessageBox();
+    }
+
+
 }

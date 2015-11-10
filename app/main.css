@@ -37,7 +37,7 @@ li, #installzxp {
 }
 
 li:hover {
-    background-color: #dff2f6;
+    background-color: #f1f1f1;
 }
 
 #installzxp {
@@ -79,4 +79,116 @@ li span {
 
 li:hover .extension_remove {
     opacity: 1;
+}
+
+@-webkit-keyframes jump {
+    from {
+        -webkit-transform: translateY(50vh);
+        transform: translateY(50vh);
+        opacity: 0;
+    }
+    to {
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+@keyframes jump {
+    from {
+        -webkit-transform: translateY(50vh);
+        transform: translateY(50vh);
+        opacity: 0;
+    }
+    to {
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+@-webkit-keyframes unjump {
+    to {
+        -webkit-transform: translateY(20vh);
+        transform: translateY(20vh);
+        opacity: 0;
+    }
+}
+@keyframes unjump {
+    to {
+        -webkit-transform: translateY(20vh);
+        transform: translateY(20vh);
+        opacity: 0;
+    }
+}
+
+#message_box_wrapper {
+    opacity: 0;
+    transition: opacity .3s;
+}
+
+#message_box {
+    display: block;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.75);
+    position: fixed;
+    bottom: 25px;
+    left: 20px;
+    right: 20px;
+    min-height: 64px;
+    text-align: left;
+    vertical-align: middle;
+    color: white;
+    border-radius: 4px;
+    transition: background-color .5s;
+    animation-name: unjump;
+    animation-duration: 0.5s;
+    animation-delay: 0s;
+    animation-timing-function: cubic-bezier(.2, .68, .18, 1.08);
+    animation-iteration-count: 1;
+}
+
+#message_box.show {
+    animation-name: jump;
+    animation-duration: 0.5s;
+    animation-delay: 0s;
+    animation-timing-function: cubic-bezier(.2, .68, .18, 1.08);
+    animation-iteration-count: 1;
+}
+
+#message_box.progress {
+    background-color: #23a4e7;
+}
+
+#message_box.success {
+    background-color: #31B17A;
+}
+
+#message_box.error {
+    background-color: #df3636;
+}
+
+.msg {
+    display: none;
+}
+
+.msg img {
+    margin-right: 8px;
+}
+
+.msg p {
+    font-size: 14px;
+    padding-top: 8px;
+    width: calc(100% - 40px);
+    float: right;
+}
+
+.msg img, .msg p {
+    min-height: 32px;
+    vertical-align: middle;
+    display: block;
+}
+
+#installzxp:disabled, #installzxp:disabled:hover {
+    opacity: .5;
+    cursor: default;
+    background-color: #f1f1f1;
 }

@@ -12,6 +12,27 @@
     <ul id="adobe-extensions-list" >
     </ul>
 
+    <div id="message_box_wrapper">
+    <div id="message_box" class="progress">
+        <div class="msg" id="msg_progress">
+
+            <p id="msg_progress_text">Installation is in progress</p>
+            <img class="loading_img" width="32" height="32" src="./img/loading-spin.svg" alt="Loading icon" />
+        </div>
+        <div class="msg" id="msg_success">
+
+            <p id="msg_success_text">Extension successfully installed</p>
+            <img width="32" height="32" src="./img/icon_check.svg" />
+        </div>
+        <div class="msg" id="msg_error">
+
+            <p id="msg_error_text">Error!</p>
+            <img width="32" height="32" src="./img/icon_error.svg" />
+        </div>
+
+    </div>
+    </div>
+
     <script>
     require('./app.js')
     </script>
