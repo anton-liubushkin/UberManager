@@ -169,10 +169,12 @@ function removeDirectories(paths, callback) {
 
 function installExtension(ext) {
     var listOfDirectroiesToRemove = [];
+    var cep5installpath = path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions', ext.id);
+    var cep4installpath = path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions', ext.id);
 
-    function copyExtension(cepVersions) {
-        for (i in cepVersions) {
-            ncp(ext.path, path.join(_dirAppdata, 'Adobe', cepVersions[i], 'extensions', ext.id), function(err) {
+    function copyExtension(_installPath) {
+        for (i in _installPath) {
+            ncp(ext.path, _installPath[i], function(err) {
                 if (!err) {
                     toggleMessageBox("success")
                     updateExtensionsList();
@@ -185,32 +187,21 @@ function installExtension(ext) {
     }
 
     function checkOldVersions(callback) {
-        if ( exists( path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions', ext.id) ) ) {
-            //console.log('We find & delete old version of installed extension in the CEP folder');
-            listOfDirectroiesToRemove.push( path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions', ext.id) );
-        }
-
-        if (ext.cep < 5) {
-            //console.log('This extension does support old CC (CEP' + ext.cep + ')');
-            if ( exists( path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions', ext.id) ) ) {
-                //console.log('We find old version of installed extension in the CEPServiceManager4 folder');
-                listOfDirectroiesToRemove.push( path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions', ext.id) );
-            }
-        }
-
-        if (callback && typeof(callback) === "function") {
-            callback();
-        }
+        if (exists(cep5installpath)) listOfDirectroiesToRemove.push(cep5installpath);
+        if (ext.cep < 5 && exists(cep4installpath)) listOfDirectroiesToRemove.push(cep4installpath);
+        callback();
     }
 
     checkOldVersions(function() {
+        var installPaths = [cep5installpath];
+        if (ext.cep < 5) installPaths.push(cep4installpath);
+
         if (listOfDirectroiesToRemove.length > 0) {
-            //console.log('We was find a ' + listOfDirectroiesToRemove.length + ' old versions of this extension');
             removeDirectories(listOfDirectroiesToRemove, function() {
-                copyExtension(['CEP', 'CEPServiceManager4']);
+                copyExtension(installPaths);
             });
         } else {
-            copyExtension(['CEP', 'CEPServiceManager4']);
+            copyExtension(installPaths);
         }
     });
 
@@ -247,9 +238,6 @@ document.getElementById('installzxp').onclick = function() {
         filters: [{
             name: 'Adobe Extension',
             extensions: ['zxp']
-        }, {
-            name: 'All Files',
-            extensions: ['*']
         }]
     };
 
