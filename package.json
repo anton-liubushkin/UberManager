@@ -29,5 +29,13 @@
     "electron-prebuilt": "^0.34.2"
   },
   "author": "Anton Lyubushkin <nvkz.nemo@gmail.com> (http://uberplugins.cc)",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+      "type": "git",
+      "url": "git+https://github.com/nvkzNemo/UberManager.git"
+  },
+  "bugs": {
+      "url": "https://github.com/nvkzNemo/UberManager/issues"
+  },
+  "homepage": "http://uberplugins.cc/ubermanager/"
 }
