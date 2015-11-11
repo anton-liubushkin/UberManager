@@ -9,6 +9,7 @@ var fs = require('fs'),
     xml2js = require('xml2js'),
     unzip = require('unzip'),
     mkdirp = require('mkdirp'),
+    glob = require("glob"),
     _osType = os.type(),
     _osPlatform = os.platform(),
     _osArch = os.arch(),
@@ -27,7 +28,6 @@ var fs = require('fs'),
     removeButtons = [],
     msgtimer,
     ignoreList = ["com.adobe.DesignLibraries.angular", "AdobeExchange", "com.adobe.behance.shareonbehance.html", "KulerPanelBundle", "SearchForHelp", "com.adobe.preview", "com.adobe.webpa.crema"];
-
 
 parser.addListener('end', function(result) {
     xmlObj = result;
@@ -237,43 +237,61 @@ document.getElementById('installzxp').onclick = function() {
     var dialogFilter = {
         filters: [{
             name: 'Adobe Extension',
-            extensions: ['zxp']
+            extensions: ['zxp', 'zip']
         }]
     };
 
-    dialog.showOpenDialog(dialogFilter, function(filepath) {
+    dialog.showOpenDialog(dialogFilter, function(_f) {
 
-        if (!filepath) return
+        if (!_f) return
 
         toggleMessageBox("progress");
 
-        var newfile = path.parse(filepath[0]);
+        startInstall(_f[0]);
 
-        if (newfile.ext != ".zxp") {
-            toggleMessageBox("error", "Cannot install this type of file. Please use a ZXP file");
-            return
+        function startInstall(filepath) {
+
+            var newfile = path.parse(filepath);
+
+            if (newfile.ext != ".zxp" && newfile.ext != ".zip") {
+                toggleMessageBox("error", "Cannot install this type of file. Please use a ZXP or ZIP file");
+                return
+            }
+
+            var installPath = path.join(_dirTemp, 'UberManager', newfile.name);
+
+            var readStream = fs.createReadStream(filepath);
+
+            var unzipStream = unzip.Extract({
+                path: installPath
+            });
+
+            unzipStream.on('close', function() {
+                // + support Davide Barranca PSInstall script & other unzipped extension
+                var manifestFile = glob.sync('**/CSXS/manifest.xml', {cwd: installPath});
+                if (manifestFile.length == 1) {
+                    installPath = path.join(installPath, manifestFile[0], '..', '..');
+                    getExtensionInfo(installPath, true);
+                } else {
+                    // + support multipack extensionons
+                    var zxpFiles = glob.sync('**/*.zxp', {cwd: installPath});
+                    for (i in zxpFiles) {
+                        startInstall(path.join(installPath, zxpFiles[i]))
+                    }
+                }
+
+            });
+            unzipStream.on('end', function() {
+                getExtensionInfo(installPath, true);
+            });
+            unzipStream.on('error', function(err) {
+                toggleMessageBox("error", "Installation failed because UberManager could not parse the ZXP file");
+                updateExtensionsList();
+            });
+
+            readStream.pipe(unzipStream);
         }
 
-        var installPath = path.join(_dirTemp, 'UberManager', newfile.name);
-
-        var readStream = fs.createReadStream(filepath[0]);
-
-        var unzipStream = unzip.Extract({
-            path: installPath
-        });
-
-        unzipStream.on('close', function() {
-            getExtensionInfo(installPath, true);
-        });
-        unzipStream.on('end', function() {
-            getExtensionInfo(installPath, true);
-        });
-        unzipStream.on('error', function(err) {
-            toggleMessageBox("error", "Installation failed because UberManager could not parse the ZXP file");
-            updateExtensionsList();
-        });
-
-        readStream.pipe(unzipStream);
     });
 }
 
