@@ -1,18 +1,27 @@
 {
   "name": "ubermanager",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "An open source Adobe extension manager",
+  "main": "index.js",
   "scripts": {
-    "dev": "electron ./app",
+    "dev": "electron .",
     "clean": "rm -rf ./release",
     "clean:osx": "rm -rf ./release/osx",
     "clean:win": "rm -rf ./release/win",
     "build": "npm run clean && npm run build:osx && npm run build:win",
-    "build:osx": "npm run clean:osx && electron-packager ./app \"UberManager\" --out=release/osx --platform=darwin --arch=x64 --version=0.34.2 --icon=assets/osx/icon.icns",
-    "build:win": "npm run clean:win && electron-packager ./app \"UberManager\" --out=release/win --platform=win32 --arch=ia32 --version=0.34.2 --icon=assets/win/icon.ico",
+    "build:osx": "npm run clean:osx && electron-packager . \"UberManager\" --ignore=mode_modules/electron-* --ignore=mode_modules/.bin/electron-* --ignore=assets --ignore=release --ignore=./.git --ignore=./.gitignore --ignore=packager.json --ignore=README.md --ignore=LICENSE --out=release/osx --platform=darwin --arch=x64 --version=0.34.2 --icon=assets/osx/icon.icns",
+    "build:win": "npm run clean:win && electron-packager . \"UberManager\" --ignore=mode_modules/electron-* --ignore=mode_modules/.bin/electron-* --ignore=assets --ignore=release --ignore=./.git --ignore=./.gitignore --ignore=packager.json --ignore=README.md --ignore=LICENSE --out=release/win --platform=win32 --arch=ia32 --version=0.34.2 --icon=assets/win/icon.ico",
     "pack": "npm run pack:osx && npm run pack:win",
     "pack:osx": "npm run build:osx && electron-builder \"release/osx/UberManager-darwin-x64/UberManager.app\" --platform=osx --out=\"release/osx\" --config=packager.json",
     "pack:win": "npm run build:win && electron-builder \"release/win/UberManager-win32-ia32\" --platform=win --out=\"release/win\" --config=packager.json"
+  },
+  "dependencies": {
+    "glob": "^5.0.15",
+    "mkdirp": "^0.5.1",
+    "ncp": "^2.0.0",
+    "rimraf": "^2.4.3",
+    "unzip": "^0.1.11",
+    "xml2js": "^0.4.13"
   },
   "devDependencies": {
     "electron-builder": "^2.1.1",

@@ -14,7 +14,7 @@ UberManager uses Electron (http://electron.atom.io) to create a cross platform H
 
 1. Install the dependencies and start the app.
     ```
-    cd app && npm install && cd .. && npm install
+    npm install
     npm run dev
     ```
 
