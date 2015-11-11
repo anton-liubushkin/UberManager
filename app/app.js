@@ -258,31 +258,32 @@ document.getElementById('installzxp').onclick = function() {
                 return
             }
 
-            var installPath = path.join(_dirTemp, 'UberManager', newfile.name);
+            var extractPath = path.join(_dirTemp, 'UberManager', newfile.name + '_' + Math.random().toString().substr(2,9));
 
             var readStream = fs.createReadStream(filepath);
 
             var unzipStream = unzip.Extract({
-                path: installPath
+                path: extractPath
             });
 
             unzipStream.on('close', function() {
                 // + support Davide Barranca PSInstall script & other unzipped extension
-                var manifestFile = glob.sync('**/CSXS/manifest.xml', {cwd: installPath});
+                var manifestFile = glob.sync('**/CSXS/manifest.xml', {cwd: extractPath});
                 if (manifestFile.length == 1) {
-                    installPath = path.join(installPath, manifestFile[0], '..', '..');
-                    getExtensionInfo(installPath, true);
+                    extractPath = path.join(extractPath, manifestFile[0], '..', '..');
+                    getExtensionInfo(extractPath, true);
                 } else {
                     // + support multipack extensionons
-                    var zxpFiles = glob.sync('**/*.zxp', {cwd: installPath});
+                    var zxpFiles = glob.sync('**/*.zxp', {cwd: extractPath});
                     for (i in zxpFiles) {
-                        startInstall(path.join(installPath, zxpFiles[i]))
+                        startInstall(path.join(extractPath, zxpFiles[i]))
                     }
                 }
 
             });
             unzipStream.on('end', function() {
-                getExtensionInfo(installPath, true);
+                // Use on.('close'
+                //getExtensionInfo(extractPath, true);
             });
             unzipStream.on('error', function(err) {
                 toggleMessageBox("error", "Installation failed because UberManager could not parse the ZXP file");
