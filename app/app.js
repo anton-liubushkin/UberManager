@@ -21,6 +21,7 @@ var fs = require('fs'),
     _dirCommonFiles = null,
     extensionsList = [],
     extensionsDirectoriesList = [],
+    tempDirectoriesList = [],
     totalExtensions = 0,
     currentExtensions = 0,
     parser = new xml2js.Parser(),
@@ -33,16 +34,19 @@ parser.addListener('end', function(result) {
     xmlObj = result;
 });
 
-function getDirectories(srcpath, callback) {
+function getDirectories(srcpath, temp, callback) {
     for (i in srcpath) {
         //console.log("Check " + Number(Number(i) + 1) + " of " + srcpath.length + "\n" + srcpath[i])
         if (exists(srcpath[i])) {
             var files = fs.readdirSync(srcpath[i]);
             files.forEach(function(file) {
                 if (fs.statSync(path.join(srcpath[i], file)).isDirectory()) {
-                    //console.log('Find a extension: ' + file);
-                    if (ignoreList.indexOf(file) < 0) {
-                        extensionsDirectoriesList.push(path.join(srcpath[i], file));
+                    if (temp) {
+                        tempDirectoriesList.push(path.join(srcpath[i], file));
+                    } else {
+                        if (ignoreList.indexOf(file) < 0) {
+                            extensionsDirectoriesList.push(path.join(srcpath[i], file));
+                        }
                     }
                 }
             });
@@ -64,7 +68,7 @@ function exists(_path, make) {
         }
     } catch (ex) {
         if (make) {
-            mkdirp(_path, function(err){
+            mkdirp(_path, function(err) {
                 if (!err) {
                     return _path;
                 } else {
@@ -122,12 +126,12 @@ function updateExtensionsList() {
 
     if (_osPlatform == "win32") {
         var winPaths = [];
-        winPaths.push( exists( path.join(_dirCommonFiles, 'Adobe', 'CEPServiceManager4', 'extensions'), true) );
-        winPaths.push( exists( path.join(_dirCommonFiles, 'Adobe', 'CEP', 'extensions'), true) );
-        winPaths.push( exists( path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions'), true) );
-        winPaths.push( exists( path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions'), true) );
+        winPaths.push(exists(path.join(_dirCommonFiles, 'Adobe', 'CEPServiceManager4', 'extensions'), true));
+        winPaths.push(exists(path.join(_dirCommonFiles, 'Adobe', 'CEP', 'extensions'), true));
+        winPaths.push(exists(path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions'), true));
+        winPaths.push(exists(path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions'), true));
 
-        getDirectories(winPaths, function(msg) {
+        getDirectories(winPaths, false, function(msg) {
             totalExtensions = extensionsDirectoriesList.length;
             for (i in extensionsDirectoriesList) {
                 getExtensionInfo(extensionsDirectoriesList[i]);
@@ -141,7 +145,7 @@ function updateExtensionsList() {
         macPaths.push(exists(path.join(_dirAppdata, '/Adobe/CEPServiceManager4/extensions'), true));
         macPaths.push(exists(path.join(_dirAppdata, '/Adobe/CEP/extensions'), true));
 
-        getDirectories(macPaths, function(msg) {
+        getDirectories(macPaths, false, function(msg) {
             totalExtensions = extensionsDirectoriesList.length;
             for (i in extensionsDirectoriesList) {
                 getExtensionInfo(extensionsDirectoriesList[i]);
@@ -156,6 +160,16 @@ function resetVars() {
     totalExtensions = 0;
     currentExtensions = 0;
     extensionsList = [];
+}
+
+function clearTempDir() {
+    getDirectories([path.join(_dirTemp, 'UberManager')], true, function(msg) {
+        if (tempDirectoriesList.length > 0) {
+            removeDirectories(tempDirectoriesList, function() {
+                tempDirectoriesList = [];
+            });
+        }
+    });
 }
 
 function removeDirectories(paths, callback) {
@@ -223,6 +237,7 @@ function checkPlatform() {
 }
 
 checkPlatform();
+clearTempDir();
 
 // ========================================================
 //
@@ -258,7 +273,7 @@ document.getElementById('installzxp').onclick = function() {
                 return
             }
 
-            var extractPath = path.join(_dirTemp, 'UberManager', newfile.name + '_' + Math.random().toString().substr(2,9));
+            var extractPath = path.join(_dirTemp, 'UberManager', newfile.name + '_' + Math.random().toString().substr(2, 9));
 
             var readStream = fs.createReadStream(filepath);
 
@@ -268,13 +283,17 @@ document.getElementById('installzxp').onclick = function() {
 
             unzipStream.on('close', function() {
                 // + support Davide Barranca PSInstall script & other unzipped extension
-                var manifestFile = glob.sync('**/CSXS/manifest.xml', {cwd: extractPath});
+                var manifestFile = glob.sync('**/CSXS/manifest.xml', {
+                    cwd: extractPath
+                });
                 if (manifestFile.length == 1) {
                     extractPath = path.join(extractPath, manifestFile[0], '..', '..');
                     getExtensionInfo(extractPath, true);
                 } else {
                     // + support multipack extensionons
-                    var zxpFiles = glob.sync('**/*.zxp', {cwd: extractPath});
+                    var zxpFiles = glob.sync('**/*.zxp', {
+                        cwd: extractPath
+                    });
                     for (i in zxpFiles) {
                         startInstall(path.join(extractPath, zxpFiles[i]))
                     }
