@@ -5,29 +5,29 @@ function init() {
         _path = require('path'),
         _remote = require('remote'),
         _app = _remote.require('app'),
-        _os = _remote.require('os'),
-        _dialog = _remote.require('dialog'),
-        _ncp = require('ncp').ncp,
-        _rimraf = require('rimraf'),
-        _xml2js = require('xml2js'),
-        _unzip = require('unzip'),
-        _mkdirp = require('mkdirp'),
-        _glob = require("glob"),
-        _osType = _os.type(),
-        _osPlatform = _os.platform(),
-        _osArch = _os.arch(),
         _dirHome = _app.getPath('home'), // C:/Users/Anton
         _dirAppdata = _app.getPath('appData'), // C:/Users/Anton/AppData/Roaming || ~/Library/Application Support
         _dirTemp = _app.getPath('temp'), // C:/Users/Anton/AppData/Local/Temp
         _dirDesktop = _app.getPath('userDesktop'), // C:/Users/Anton/Desktop
+        _os = _remote.require('os'),
+        _osType = _os.type(),
+        _osPlatform = _os.platform(),
+        _osArch = _os.arch(),
+        _dialog = _remote.require('dialog'),
+        _ncp = require('ncp').ncp,
+        _rimraf = require('rimraf'),
+        _xml2js = require('xml2js'),
+        _parser = new _xml2js.Parser(),
+        _xmlObj = null,
+        _unzip = require('unzip'),
+        _mkdirp = require('mkdirp'),
+        _glob = require("glob"),
         _dirApplications,
-        _dirCommonFiles = null,
+        _dirCommonFiles,
         _systemCep5InstallPath,
         _systemCep4InstallPath,
         _userCep5InstallPath = _path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions'),
         _userCep4InstallPath = _path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions'),
-        _parser = new _xml2js.Parser(),
-        _xmlObj = null,
         _removeButtons = [],
         _msgtimer,
         _ignoreList = ["com.adobe.DesignLibraries.angular", "AdobeExchange", "com.adobe.behance.shareonbehance.html", "KulerPanelBundle", "SearchForHelp", "com.adobe.preview", "com.adobe.webpa.crema"];
@@ -112,10 +112,10 @@ function init() {
         }
     }
 
-    function getExtensionInfo(_extensiondir, callback) {
-        _fs.readFile(_path.join(_extensiondir, 'CSXS', 'manifest.xml'), function(err, data) {
+    function getExtensionInfo(pathToExtension, callback) {
+        _fs.readFile(_path.join(pathToExtension, 'CSXS', 'manifest.xml'), function(err, data) {
             if (err) {
-                console.log('​/ ! \\ Error! Can not read manifest.xml file from: ' + _extensiondir);
+                console.log('​/ ! \\ Error! Can not read manifest.xml file from: ' + pathToExtension);
                 console.log(err);
                 callback(null);
             }
@@ -124,7 +124,7 @@ function init() {
                 var ext = {};
                 ext.name = _xmlObj.ExtensionManifest.$.ExtensionBundleName || _xmlObj.ExtensionManifest.$.ExtensionBundleId; // Extension Name
                 ext.id = _xmlObj.ExtensionManifest.$.ExtensionBundleId;
-                ext.path = _extensiondir;
+                ext.path = pathToExtension;
                 ext.ver = _xmlObj.ExtensionManifest.$.ExtensionBundleVersion;
                 ext.cep = Math.floor(_xmlObj.ExtensionManifest.ExecutionEnvironment[0].RequiredRuntimeList[0].RequiredRuntime[0].$.Version);
                 var hostsList = _xmlObj.ExtensionManifest.ExecutionEnvironment[0].HostList[0].Host;
@@ -138,7 +138,7 @@ function init() {
                 //console.log(ext.hosts[i].$.Version.replace(/([\[\]])+/g, '').split(',')); // Supported Versions
                 //console.log(_xmlObj.ExtensionManifest.Author[0]); // Author
             } catch (e) {
-                console.log('​/ ! \\ Error! Can not parse manifest.xml file from: ' + _extensiondir);
+                console.log('​/ ! \\ Error! Can not parse manifest.xml file from: ' + pathToExtension);
                 callback(null);
             }
         });
