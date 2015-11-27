@@ -123,6 +123,7 @@ li:hover .extension_remove {
 #message_box_wrapper {
     opacity: 0;
     transition: opacity .3s;
+    pointer-events: none;
 }
 
 #message_box {
