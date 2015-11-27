@@ -1,69 +1,66 @@
 ;
 
 function init() {
-    var fs = require('fs'),
-        path = require('path'),
-        remote = require('remote'),
-        app = remote.require('app'),
-        os = remote.require('os'),
-        dialog = remote.require('dialog'),
-        ncp = require('ncp').ncp,
-        rimraf = require('rimraf'),
-        xml2js = require('xml2js'),
-        unzip = require('unzip'),
-        mkdirp = require('mkdirp'),
-        glob = require("glob"),
-        _osType = os.type(),
-        _osPlatform = os.platform(),
-        _osArch = os.arch(),
-        _dirHome = app.getPath('home'), // C:/Users/Anton
-        _dirAppdata = app.getPath('appData'), // C:/Users/Anton/AppData/Roaming || ~/Library/Application Support
-        _dirTemp = app.getPath('temp'), // C:/Users/Anton/AppData/Local/Temp
-        _dirDesktop = app.getPath('userDesktop'), // C:/Users/Anton/Desktop
+    var _fs = require('fs'),
+        _path = require('path'),
+        _remote = require('remote'),
+        _app = _remote.require('app'),
+        _os = _remote.require('os'),
+        _dialog = _remote.require('dialog'),
+        _ncp = require('ncp').ncp,
+        _rimraf = require('rimraf'),
+        _xml2js = require('xml2js'),
+        _unzip = require('unzip'),
+        _mkdirp = require('mkdirp'),
+        _glob = require("glob"),
+        _osType = _os.type(),
+        _osPlatform = _os.platform(),
+        _osArch = _os.arch(),
+        _dirHome = _app.getPath('home'), // C:/Users/Anton
+        _dirAppdata = _app.getPath('appData'), // C:/Users/Anton/AppData/Roaming || ~/Library/Application Support
+        _dirTemp = _app.getPath('temp'), // C:/Users/Anton/AppData/Local/Temp
+        _dirDesktop = _app.getPath('userDesktop'), // C:/Users/Anton/Desktop
         _dirApplications,
         _dirCommonFiles = null,
-        system_cep5installpath,
-        system_cep4installpath,
-        user_cep5installpath = path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions'),
-        user_cep4installpath = path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions'),
-        extensionsList = [],
-        extensionsDirectoriesList = [],
-        tempDirectoriesList = [],
-        totalExtensions = 0,
-        currentExtensions = 0,
-        parser = new xml2js.Parser(),
-        xmlObj = null,
-        removeButtons = [],
-        msgtimer,
-        ignoreList = ["com.adobe.DesignLibraries.angular", "AdobeExchange", "com.adobe.behance.shareonbehance.html", "KulerPanelBundle", "SearchForHelp", "com.adobe.preview", "com.adobe.webpa.crema"];
+        _systemCep5InstallPath,
+        _systemCep4InstallPath,
+        _userCep5InstallPath = _path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions'),
+        _userCep4InstallPath = _path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions'),
+        _extensionsList = [],
+        _totalExtensions = 0,
+        _currentExtensions = 0,
+        _parser = new _xml2js.Parser(),
+        _xmlObj = null,
+        _removeButtons = [],
+        _msgtimer,
+        _ignoreList = ["com.adobe.DesignLibraries.angular", "AdobeExchange", "com.adobe.behance.shareonbehance.html", "KulerPanelBundle", "SearchForHelp", "com.adobe.preview", "com.adobe.webpa.crema"];
 
-    parser.addListener('end', function(result) {
-        xmlObj = result;
+    _parser.addListener('end', function(result) {
+        _xmlObj = result;
     });
 
     // Clear Temp directory
-    getDirectories([path.join(_dirTemp, 'UberManager')], true, function(msg) {
-        if (tempDirectoriesList.length > 0) {
-            removeDirectories(tempDirectoriesList, function() {
-                tempDirectoriesList = [];
+    getDirectories([_path.join(_dirTemp, 'UberManager')], function(directories) {
+        if (directories.length > 0) {
+            removeDirectories(directories, function() {
             });
         }
     });
 
     // Check platform
     if (_osPlatform == 'win32') {
-        _dirApplications = path.join(_dirHome, '..', '..', 'Program Files (x86)');
+        _dirApplications = _path.join(_dirHome, '..', '..', 'Program Files (x86)');
         if (exists(_dirApplications)) {
-            _dirCommonFiles = path.join(_dirApplications, 'Common Files');
+            _dirCommonFiles = _path.join(_dirApplications, 'Common Files');
         } else {
-            _dirCommonFiles = path.join(_dirHome, '..', '..', 'Program Files', 'Common Files');
-            _dirApplications = path.join(_dirHome, '..', '..', 'Program Files');
+            _dirCommonFiles = _path.join(_dirHome, '..', '..', 'Program Files', 'Common Files');
+            _dirApplications = _path.join(_dirHome, '..', '..', 'Program Files');
         }
-        system_cep5installpath = path.join(_dirCommonFiles, 'Adobe', 'CEP', 'extensions');
-        system_cep4installpath = path.join(_dirCommonFiles, 'Adobe', 'CEPServiceManager4', 'extensions');
+        _systemCep5InstallPath = _path.join(_dirCommonFiles, 'Adobe', 'CEP', 'extensions');
+        _systemCep4InstallPath = _path.join(_dirCommonFiles, 'Adobe', 'CEPServiceManager4', 'extensions');
     } else {
-        system_cep5installpath = path.join('/Library', 'Application Support', 'Adobe', 'CEP', 'extensions');
-        system_cep4installpath = path.join('/Library', 'Application Support', 'Adobe', 'CEPServiceManager4', 'extensions');
+        _systemCep5InstallPath = _path.join('/Library', 'Application Support', 'Adobe', 'CEP', 'extensions');
+        _systemCep4InstallPath = _path.join('/Library', 'Application Support', 'Adobe', 'CEPServiceManager4', 'extensions');
     }
 
 
@@ -71,37 +68,40 @@ function init() {
     updateExtensionsList();
 
 
-    function getDirectories(srcpath, temp, callback) {
-        for (i in srcpath) {
-            //console.log("Check " + Number(Number(i) + 1) + " of " + srcpath.length + "\n" + srcpath[i])
-            if (exists(srcpath[i])) {
-                var files = fs.readdirSync(srcpath[i]);
+    function getDirectories(srcpaths, callback) {
+        var counter = 0;
+        var total = srcpaths.length;
+        var directories = [];
+        srcpaths.forEach(function(srcpath) {
+            if (exists(srcpath)) {
+                var files = _fs.readdirSync(srcpath);
                 files.forEach(function(file) {
-                    if (fs.statSync(path.join(srcpath[i], file)).isDirectory()) {
-                        if (temp) {
-                            tempDirectoriesList.push(path.join(srcpath[i], file));
-                        } else {
-                            if (ignoreList.indexOf(file) < 0) {
-                                extensionsDirectoriesList.push(path.join(srcpath[i], file));
-                            }
+                    if (_fs.statSync(_path.join(srcpath, file)).isDirectory()) {
+                        if (_ignoreList.indexOf(file) < 0) {
+                            directories.push(_path.join(srcpath, file));
                         }
                     }
                 });
-                if (srcpath.length == Number(i) + 1 && callback && typeof(callback) === "function") {
-                    callback('Done!');
-                }
             }
+            counter++
+        });
+
+        //console.log('counter = ' + counter + ' | total = ' + total);
+
+        if (counter == total && callback && typeof(callback) === "function") {
+            callback( directories );
         }
+        //console.log("Check " + Number(Number(i) + 1) + " of " + srcpath.length + "\n" + srcpath[i])
     }
 
     function exists(_path, make) {
         make = make || false;
         try {
-            fs.accessSync(_path);
+            _fs.accessSync(_path);
             return _path
         } catch (ex) {
             if (make) {
-                mkdirp(_path, function(err) {
+                _mkdirp(_path, function(err) {
                     if (!err) {
                         return _path
                     } else {
@@ -115,39 +115,35 @@ function init() {
         }
     }
 
-    function getExtensionInfo(_extensiondir, newInstall) {
-        fs.readFile(path.join(_extensiondir, 'CSXS', 'manifest.xml'), function(err, data) {
+    function getExtensionInfo(_extensiondir, callback) {
+        _fs.readFile(_path.join(_extensiondir, 'CSXS', 'manifest.xml'), function(err, data) {
+            if (err) {
+                console.log('​/ ! \\ Error! Can not read manifest.xml file from: ' + _extensiondir);
+                console.log(err);
+                callback(null);
+            }
             //console.log('Get info for ' + path);
             try {
-                parser.parseString(data);
+                _parser.parseString(data);
                 var ext = {};
-                ext.name = xmlObj.ExtensionManifest.$.ExtensionBundleName || xmlObj.ExtensionManifest.$.ExtensionBundleId; // Extension Name
-                ext.id = xmlObj.ExtensionManifest.$.ExtensionBundleId;
+                ext.name = _xmlObj.ExtensionManifest.$.ExtensionBundleName || _xmlObj.ExtensionManifest.$.ExtensionBundleId; // Extension Name
+                ext.id = _xmlObj.ExtensionManifest.$.ExtensionBundleId;
                 ext.path = _extensiondir;
-                ext.ver = xmlObj.ExtensionManifest.$.ExtensionBundleVersion;
-                ext.cep = Math.floor(xmlObj.ExtensionManifest.ExecutionEnvironment[0].RequiredRuntimeList[0].RequiredRuntime[0].$.Version);
-                var hostsList = xmlObj.ExtensionManifest.ExecutionEnvironment[0].HostList[0].Host;
+                ext.ver = _xmlObj.ExtensionManifest.$.ExtensionBundleVersion;
+                ext.cep = Math.floor(_xmlObj.ExtensionManifest.ExecutionEnvironment[0].RequiredRuntimeList[0].RequiredRuntime[0].$.Version);
+                var hostsList = _xmlObj.ExtensionManifest.ExecutionEnvironment[0].HostList[0].Host;
                 ext.hosts = [];
                 for (i in hostsList) {
                     ext.hosts.push(hostsList[i].$.Name);
                 }
                 ext.hosts.sort();
 
-                if (newInstall) {
-                    installExtension(ext);
-                    return
-                }
-
-                extensionsList.push(ext);
-
-                currentExtensions++;
-                if (currentExtensions == totalExtensions && totalExtensions != 0) drawExtensionsList(extensionsList);
+                callback(ext);
                 //console.log(ext.hosts[i].$.Version.replace(/([\[\]])+/g, '').split(',')); // Supported Versions
-                //console.log(xmlObj.ExtensionManifest.Author[0]); // Author
+                //console.log(_xmlObj.ExtensionManifest.Author[0]); // Author
             } catch (e) {
-                console.log('​/ ! \\ Error! Can not read manifest.xml file from: ' + _extensiondir);
-                currentExtensions++;
-                if (currentExtensions == totalExtensions && totalExtensions != 0) drawExtensionsList(extensionsList);
+                console.log('​/ ! \\ Error! Can not parse manifest.xml file from: ' + _extensiondir);
+                callback(null);
             }
         });
     }
@@ -158,66 +154,93 @@ function init() {
         resetVars();
 
         var allPaths = [];
-        if (exists(system_cep4installpath, true)) allPaths.push(system_cep4installpath);
-        if (exists(system_cep5installpath, true)) allPaths.push(system_cep5installpath);
-        if (exists(user_cep4installpath, true)) allPaths.push(user_cep4installpath);
-        if (exists(user_cep5installpath, true)) allPaths.push(user_cep5installpath);
+        if (exists(_systemCep4InstallPath, true)) {
+            allPaths.push(_systemCep4InstallPath);
+        }
+        if (exists(_systemCep5InstallPath, true)) {
+            allPaths.push(_systemCep5InstallPath);
+        }
+        if (exists(_userCep4InstallPath, true)) {
+            allPaths.push(_userCep4InstallPath);
+        }
+        if (exists(_userCep5InstallPath, true)) {
+            allPaths.push(_userCep5InstallPath);
+        }
 
-        getDirectories(allPaths, false, function(msg) {
-            totalExtensions = extensionsDirectoriesList.length;
-            for (i in extensionsDirectoriesList) {
-                getExtensionInfo(extensionsDirectoriesList[i]);
-            }
+        getDirectories(allPaths, function(directories) {
+            var counter = 0;
+            var extensionsList = [];
+            directories.forEach(function(extDir) {
+                getExtensionInfo(extDir, function(ext){
+                    if (ext) extensionsList.push(ext);
+                    counter++
+                    if (counter == directories.length) {
+                        drawExtensionsList(extensionsList);
+                    }
+                });
+
+            });
         });
 
     }
 
     function resetVars() {
-        extensionsDirectoriesList = [];
-        totalExtensions = 0;
-        currentExtensions = 0;
-        extensionsList = [];
+        _totalExtensions = 0;
+        _currentExtensions = 0;
+        _extensionsList = [];
     }
 
 
     function removeDirectories(paths, callback) {
-        for (i in paths) {
-            rimraf.sync(paths[i]);
-        }
-        if (callback) {
-            callback();
-        }
+        var total = paths.length;
+        var counter = 0;
+
+        paths.forEach(function(path){
+            _rimraf.sync(path);
+            counter++
+            if (total == counter && callback) callback();
+        });
+
     }
 
     function installExtension(ext) {
         var listOfDirectroiesToRemove = [];
-        var cep5installpath = path.join(system_cep5installpath, ext.id);
-        var cep4installpath = path.join(system_cep4installpath, ext.id);
+        var cep5path = _path.join(_systemCep5InstallPath, ext.id);
+        var cep4path = _path.join(_systemCep4InstallPath, ext.id);
 
-        function copyExtension(_installPath) {
-            for (i in _installPath) {
-                console.log('Install ' + ext.name + ' to the\n' + _installPath[i]);
-                ncp(ext.path, _installPath[i], function(err) {
+        function copyExtension(installPaths) {
+            var total = installPaths.length;
+            var counter = 0;
+            installPaths.forEach(function(installPath){
+                _ncp(ext.path, installPath, function(err) {
                     if (!err) {
                         toggleMessageBox("success")
-                        updateExtensionsList();
                     } else {
                         toggleMessageBox("error", "Installation failed. Error: " + err);
                         console.log(err);
                     }
+                    counter++
+                    if (total == counter) updateExtensionsList();
                 });
-            }
+
+            });
         }
 
         function checkOldVersions(callback) {
-            if (exists(cep5installpath)) listOfDirectroiesToRemove.push(cep5installpath);
-            if (ext.cep < 5 && exists(cep4installpath)) listOfDirectroiesToRemove.push(cep4installpath);
+            if (exists(cep5path)) {
+                listOfDirectroiesToRemove.push(cep5path);
+            }
+            if (ext.cep < 5 && exists(cep4path)) {
+                listOfDirectroiesToRemove.push(cep4path);
+            }
             callback();
         }
 
         checkOldVersions(function() {
-            var installPaths = [cep5installpath];
-            if (ext.cep < 5) installPaths.push(cep4installpath);
+            var installPaths = [cep5path];
+            if (ext.cep < 5) {
+                installPaths.push(cep4path);
+            }
 
             if (listOfDirectroiesToRemove.length > 0) {
                 removeDirectories(listOfDirectroiesToRemove, function() {
@@ -249,7 +272,7 @@ function init() {
             }]
         };
 
-        dialog.showOpenDialog(dialogFilter, function(_f) {
+        _dialog.showOpenDialog(dialogFilter, function(_f) {
 
             if (!_f) return
 
@@ -259,50 +282,52 @@ function init() {
 
             function startInstall(filepath) {
 
-                var newfile = path.parse(filepath);
+                var newfile = _path.parse(filepath);
 
                 if (newfile.ext != ".zxp" && newfile.ext != ".zip") {
                     toggleMessageBox("error", "Cannot install this type of file. Please use a ZXP or ZIP file");
                     return
                 }
 
-                var extractPath = path.join(_dirTemp, 'UberManager', newfile.name + '_' + Math.random().toString().substr(2, 9));
+                var extractPath = _path.join(_dirTemp, 'UberManager', newfile.name + '_' + Math.random().toString().substr(2, 9));
 
-                var readStream = fs.createReadStream(filepath);
+                var readStream = _fs.createReadStream(filepath);
 
-                var unzipStream = unzip.Extract({
+                var _unzipStream = _unzip.Extract({
                     path: extractPath
                 });
 
-                unzipStream.on('close', function() {
-                    // + support Davide Barranca PSInstall script & other unzipped extension
-                    var manifestFile = glob.sync('**/CSXS/manifest.xml', {
+                _unzipStream.on('close', function() {
+                    // + support Davide Barranca PSInstall script & other _unzipped extension
+                    var manifestFile = _glob.sync('**/CSXS/manifest.xml', {
                         cwd: extractPath
                     });
                     if (manifestFile.length == 1) {
-                        extractPath = path.join(extractPath, manifestFile[0], '..', '..');
-                        getExtensionInfo(extractPath, true);
+                        extractPath = _path.join(extractPath, manifestFile[0], '..', '..');
+                        getExtensionInfo(extractPath, function(ext){
+                            installExtension(ext);
+                        });
                     } else {
                         // + support multipack extensionons
-                        var zxpFiles = glob.sync('**/*.zxp', {
+                        var zxpFiles = _glob.sync('**/*.zxp', {
                             cwd: extractPath
                         });
                         for (i in zxpFiles) {
-                            startInstall(path.join(extractPath, zxpFiles[i]))
+                            startInstall(_path.join(extractPath, zxpFiles[i]))
                         }
                     }
 
                 });
-                unzipStream.on('end', function() {
+                _unzipStream.on('end', function() {
                     // Use on.('close'
                     //getExtensionInfo(extractPath, true);
                 });
-                unzipStream.on('error', function(err) {
+                _unzipStream.on('error', function(err) {
                     toggleMessageBox("error", "Installation failed because UberManager could not parse the ZXP file");
                     updateExtensionsList();
                 });
 
-                readStream.pipe(unzipStream);
+                readStream.pipe(_unzipStream);
             }
 
         });
@@ -409,10 +434,10 @@ function init() {
             drawExtensionsListElem(extensionsList[i]);
         }
 
-        removeButtons = document.getElementsByClassName('extension_remove');
+        _removeButtons = document.getElementsByClassName('extension_remove');
 
-        for (var i = 0; i < removeButtons.length; i++) {
-            removeButtons[i].addEventListener('click', clickOnRemoveIcon, false);
+        for (var i = 0; i < _removeButtons.length; i++) {
+            _removeButtons[i].addEventListener('click', clickOnRemoveIcon, false);
         }
     };
 
@@ -455,7 +480,7 @@ function init() {
             msg_error.style["display"] = "none";
 
             if (type == "progress") {
-                clearTimeout(msgtimer);
+                clearTimeout(_msgtimer);
                 installbtn.disabled = true;
                 msg_progress_text.innerHTML = message || "Installation is in progress";
                 msg_progress.style["display"] = "block";
@@ -463,25 +488,25 @@ function init() {
             }
 
             if (type == "success") {
-                clearTimeout(msgtimer);
+                clearTimeout(_msgtimer);
                 installbtn.disabled = false;
                 msg_success_text.innerHTML = message || "Extension successfully installed";
                 msg_success.style["display"] = "block";
                 message_box.className = message_box.className + " success";
-                msgtimer = setTimeout(hideMessageBox, 3000);
+                _msgtimer = setTimeout(hideMessageBox, 3000);
             }
 
             if (type == "error") {
-                clearTimeout(msgtimer);
+                clearTimeout(_msgtimer);
                 installbtn.disabled = false;
                 msg_error_text.innerHTML = message || "Oops, unknown error";
                 msg_error.style["display"] = "block";
                 message_box.className = message_box.className + " error";
-                msgtimer = setTimeout(hideMessageBox, 10000);
+                _msgtimer = setTimeout(hideMessageBox, 10000);
             }
 
         } else {
-            clearTimeout(msgtimer);
+            clearTimeout(_msgtimer);
             installbtn.disabled = false;
             hideMessageBox();
         }
