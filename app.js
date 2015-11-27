@@ -26,9 +26,6 @@ function init() {
         _systemCep4InstallPath,
         _userCep5InstallPath = _path.join(_dirAppdata, 'Adobe', 'CEP', 'extensions'),
         _userCep4InstallPath = _path.join(_dirAppdata, 'Adobe', 'CEPServiceManager4', 'extensions'),
-        _extensionsList = [],
-        _totalExtensions = 0,
-        _currentExtensions = 0,
         _parser = new _xml2js.Parser(),
         _xmlObj = null,
         _removeButtons = [],
@@ -122,7 +119,6 @@ function init() {
                 console.log(err);
                 callback(null);
             }
-            //console.log('Get info for ' + path);
             try {
                 _parser.parseString(data);
                 var ext = {};
@@ -150,8 +146,6 @@ function init() {
 
 
     function updateExtensionsList() {
-
-        resetVars();
 
         var allPaths = [];
         if (exists(_systemCep4InstallPath, true)) {
@@ -182,12 +176,6 @@ function init() {
             });
         });
 
-    }
-
-    function resetVars() {
-        _totalExtensions = 0;
-        _currentExtensions = 0;
-        _extensionsList = [];
     }
 
 
